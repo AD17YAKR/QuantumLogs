@@ -1,0 +1,77 @@
+# === Maven ===
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# === Gradle ===
+/build/
+.gradle/
+!**/src/main/**/build/
+!**/src/test/**/build/
+build.log
+.gradle-task-name-cache
+
+# === Logs ===
+*.log
+hs_err_pid*
+
+# === IDEs ===
+## IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+## Eclipse / STS
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans/
+.sts4-cache/
+
+## NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+## VS Code
+.vscode/
+
+# === OS Specific ===
+.DS_Store
+Thumbs.db
+
+# === Miscellaneous ===
+*.sw?
+*~
+.#*
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# === Build Output ===
+/bin/
+out/
+dependency-reduced-pom.xml
+interpolated*.xml
+flattened-pom.xml
+manifest.yml
+MANIFEST.MF
+
+# === Sensitive or Runtime Files ===
+secrets.yml
+overridedb.*
+dump.rdb
+lib/
+activemq-data/
+_site/
+.attach_pid*
+
+# === Git Hooks ===
+.git-hooks/
+
+
