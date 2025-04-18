@@ -1,6 +1,9 @@
 # QuantumLogger
 
-QuantumLogger is a plug-and-play intelligent logging and observability tool for Spring Boot applications. It captures the first API hit per route, logs detailed request and response metadata in structured markdown files, and, in the future, will utilize Generative AI (ChatGPT/Gemini) to summarize daily logs and diagnose errors with smart recommendations.
+QuantumLogger is a plug-and-play intelligent logging and observability tool for Spring Boot applications. It captures
+the first API hit per route, logs detailed request and response metadata in structured markdown files, and, in the
+future, will utilize Generative AI (ChatGPT/Gemini) to summarize daily logs and diagnose errors with smart
+recommendations.
 
 ## 🧩 Core Concept
 
@@ -20,14 +23,17 @@ QuantumLogger is not just a logger — it's a developer productivity booster tha
 - Avoids redundant logging.
 - Helps understand how the API behaves under normal usage.
 
-### 2. Annotation-Based Setup
+### 2. Annotation-Based Setup (Filter-Powered)
 
-- Use `@EnableQuantumAiLog` to activate the logger in any Spring Boot app.
-- Optional: Use `@IgnoreForQuantumLog` to skip logging specific endpoints like `/health` or `/login`.
+- Use `@EnableQuantumLog` to activate QuantumLogger in any Spring Boot app.
+- Behind the scenes, this annotation auto-registers a Spring OncePerRequestFilter that captures every HTTP request and
+  response.
+- Optional: Use `@ExcludeQuantumLog` to skip specific routes (via pattern match or future support through interceptors).
 
 ### 3. Detailed Request & Response Logging
 
 Captured metadata includes:
+
 - ✅ **Request:** Method, Path, Params, Body, Headers, Cookies
 - ✅ **Response:** Status Code, Headers, Body (if applicable)
 
@@ -45,6 +51,7 @@ Logs are stored in a structured directory:
   └── 04/
       └── 20250405.md
 ```
+
 - Human-readable logs perfect for developers, auditors, and reviewers.
 
 ## 🔮 Future Features
@@ -53,73 +60,104 @@ Logs are stored in a structured directory:
 
 - At the end of the day, send the `.md` log file to a GenAI model.
 - AI generates a markdown summary that highlights:
-    - ⚠️ API performance issues
-    - 🔐 Security flags (e.g., large tokens, unsecured routes)
-    - 💡 Optimization suggestions (e.g., add caching, trim headers)
+  - ⚠️ API performance issues
+  - 🔐 Security flags (e.g., large tokens, unsecured routes)
+  - 💡 Optimization suggestions (e.g., add caching, trim headers)
 
 ### 7. Error Logging + AI Debugging
 
 QuantumLogger will also:
+
 - Capture runtime errors/exceptions.
 - Log stack trace, context, and environment.
 - Use GenAI to analyze and generate:
-    - Root cause hypotheses
-    - Fix suggestions
-    - Security implications
+  - Root cause hypotheses
+  - Fix suggestions
+  - Security implications
 
 > **Basically:** "Your logs, debugged by AI."
 
 ## 🌍 Real-World Use Cases
 
-| **Scenario**           | **How QuantumLogger Helps**                  |
-|------------------------|----------------------------------------------|
-| **Staging New APIs**   | Logs first hits to validate contracts        |
-| **Auditing Production**| One-time logs give visibility without overload |
-| **Debugging**          | Errors are captured and interpreted by GenAI |
-| **Performance Tuning** | AI can highlight slow or heavy endpoints     |
-| **Documentation**      | First-hit logs serve as live API examples      |
+| **Scenario**            | **How QuantumLogger Helps**                    |
+| ----------------------- | ---------------------------------------------- |
+| **Staging New APIs**    | Logs first hits to validate contracts          |
+| **Auditing Production** | One-time logs give visibility without overload |
+| **Debugging**           | Errors are captured and interpreted by GenAI   |
+| **Performance Tuning**  | AI can highlight slow or heavy endpoints       |
+| **Documentation**       | First-hit logs serve as live API examples      |
 
 ## 🧪 Tech Stack
 
-| **Layer**          | **Technology**                         |
-|--------------------|----------------------------------------|
-| **Core Framework** | Java + Spring Boot                     |
-| **Async Execution**| `@Async` + ThreadPoolExecutor          |
-| **File Output**    | Markdown via FileWriter / BufferedWriter |
-| **Annotation Processing** | Spring AOP / AspectJ           |
-| **Scheduled Tasks**| Spring `@Scheduled` for daily summaries  |
-| **AI Integration** | OpenAI/Gemini APIs (via REST or SDK)     |
+| **Layer**           | **Technology**                                |
+| ------------------- | --------------------------------------------- |
+| **Core Framework**  | Java + Spring Boot                            |
+| **Async Execution** | `@Async` + ThreadPoolExecutor                 |
+| **File Output**     | Markdown via FileWriter / BufferedWriter      |
+| Core Interception   | Spring OncePerRequestFilter                   |
+| Body Capture        | Request/Response wrappers (`ContentCaching*`) |
+| **Scheduled Tasks** | Spring `@Scheduled` for daily summaries       |
+| **AI Integration**  | OpenAI/Gemini APIs (via REST or SDK)          |
 
 ## 🧱 Project Structure (Simplified)
 
 ```plaintext
 quantum-logger/
+├── QuantumLoggerAutoConfiguration.java       # For auto-config if building a starter
+│
 ├── annotations/
-│   ├── EnableQuantumAiLog.java
-│   └── IgnoreForQuantumLog.java
-├── aspect/
-│   └── QuantumLogAspect.java
-├── service/
-│   ├── LogWriterService.java
-│   └── AiSummarizerService.java
-├── model/
-│   └── QuantumLogEntry.java
-├── config/
-│   └── QuantumLoggerConfig.java
+│   ├── EnableQuantumLog.java               # Main toggle annotation
+│   └── ExcludeQuantumLog.java                # For endpoint exclusion (optional with filters)
+│
+├── filter/
+│   └── QuantumLoggerFilter.java              # Central request/response filter
+│
+├── wrapper/
+│   ├── CachedBodyHttpServletRequest.java     # Wrapper to read request body multiple times
+│   └── CachedBodyHttpServletResponse.java    # Wrapper to read and capture response body
+│
+├── handler/
+│   └── QuantumLogHandler.java                # Core coordinator: dedup, delegate, manage
+│
+├── deduplicator/
+│   └── LogDeduplicator.java                  # First-hit logic to prevent log flooding
+│
+├── async/
+│   └── AsyncLogExecutor.java                 # Async writer manager using ThreadPool
+│
+├── writer/
+│   ├── MarkdownLogWriter.java                # Writes human-readable markdown
+│   └── FileSystemLogStorage.java             # Handles file I/O and log file structure
+│
+├── ai/
+│   ├── AiLogSummarizer.java                  # GenAI integration for summaries
+│   └── AiErrorAnalyzer.java                  # AI-powered error diagnosis
+│
 ├── scheduler/
-│   └── EndOfDaySummaryTask.java
-└── utils/
-    └── MarkdownFormatter.java
-```
+│   └── DailyLogSummaryScheduler.java         # Runs daily summary + AI tasks
+│
+├── model/
+│   ├── QuantumLogEntry.java                  # Unified log data model
+│   └── RequestContext.java                   # Per-request structured info
+│
+├── config/
+│   └── QuantumLoggerProperties.java          # External config mapping (application.yml)
+│
+├── util/
+│   └── MarkdownUtils.java                    # Markdown formatting helpers
+│
+└── test/
+    └── QuantumLoggerIntegrationTest.java     # Tests for end-to-end filter logging
 
+```
 
 ## 🧠 Why This Project Is Smart
 
-| **Reason**            | **Impact**                                    |
-|-----------------------|-----------------------------------------------|
-| **Plug-and-play**     | Makes it adoption-friendly for teams          |
-| **Annotation-driven** | Devs can configure without changing code       |
-| **Asynchronous**      | Performance-conscious design                   |
-| **Daily Markdown Logs** | Clean, human-readable logs                   |
-| **GenAI Insights**    | AI-powered observability with debugging tips  |
-| **Extendable**        | Can be enhanced for dashboards, alerts, masking, etc. |
+| **Reason**              | **Impact**                                            |
+| ----------------------- | ----------------------------------------------------- |
+| **Plug-and-play**       | Makes it adoption-friendly for teams                  |
+| **Annotation-driven**   | Devs can configure without changing code              |
+| **Asynchronous**        | Performance-conscious design                          |
+| **Daily Markdown Logs** | Clean, human-readable logs                            |
+| **GenAI Insights**      | AI-powered observability with debugging tips          |
+| **Extendable**          | Can be enhanced for dashboards, alerts, masking, etc. |
