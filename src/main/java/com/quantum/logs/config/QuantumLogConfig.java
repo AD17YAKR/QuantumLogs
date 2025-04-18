@@ -4,13 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import com.quantum.logs.beans.QuantumLogFilter;
+import com.quantum.logs.beans.QuantumLogInterceptor;
 
 @Configuration
 public class QuantumLogConfig implements WebMvcConfigurer {
 
     @Autowired
-    private QuantumLogFilter quantumLogInterceptor;
+    private QuantumLogInterceptor quantumLogInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
