@@ -1,63 +1,59 @@
 package com.quantum.logs.beans;
 
+import com.quantum.logs.LogsApplication;
 import com.quantum.logs.annotations.EnableQuantumLog;
 import com.quantum.logs.annotations.ExcludeFromQuantumLog;
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Enumeration;
-
+import com.quantum.logs.utils.IQuantumLogPrinter;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-public class QuantumLogFilter implements Filter {
-    private final Class<?> applicationClass;
+@Component
+public class QuantumLogFilter implements HandlerInterceptor {
     private final boolean enabled;
+    private final IQuantumLogPrinter logPrinter;
 
-    public QuantumLogFilter(Class<?> applicationClass) {
-        this.enabled = AnnotationUtils.findAnnotation(applicationClass, EnableQuantumLog.class) != null;
-        System.out.println(
-                "QuantumLogFilter initialized with enabled=" + enabled + " for class=" + applicationClass.getName());
-        this.applicationClass = applicationClass;
+    public QuantumLogFilter(IQuantumLogPrinter logPrinter) {
+        this.logPrinter = logPrinter;
+        this.enabled = AnnotationUtils.findAnnotation(
+                LogsApplication.class, EnableQuantumLog.class) != null;
+        System.out.println("QuantumLogInterceptor enabled=" + enabled);
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        if (!enabled) {
+    public boolean preHandle(HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler) {
+        if (!enabled || !(handler instanceof HandlerMethod)) {
+            return true;
+        }
+
+        HandlerMethod hm = (HandlerMethod) handler;
+        if (hm.getMethod().isAnnotationPresent(ExcludeFromQuantumLog.class)) {
+            return true;
+        }
+
+        logPrinter.printRequestCurl(request);
+        logPrinter.printRequestHeaders(request);
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler,
+            Exception ex) {
+        if (!enabled || !(handler instanceof HandlerMethod)) {
             return;
         }
-        if (request instanceof HttpServletRequest httpRequest) {
-            String methodName = ((HttpServletRequest) request).getMethod();
-            String requestURI = ((HttpServletRequest) request).getRequestURI();
 
-            if (!isMethodExcluded(requestURI)) {
-                System.out.println("Request Method: " + methodName);
-                System.out.println("Request URI: " + requestURI);
-                Enumeration<String> headerNames = httpRequest.getHeaderNames();
-                System.out.println("Headers:");
-                while (headerNames.hasMoreElements()) {
-                    String headerName = headerNames.nextElement();
-                    String headerValue = httpRequest.getHeader(headerName);
-                    System.out.println("\t" + headerName + ": " + headerValue);
-                }
-            }
+        HandlerMethod hm = (HandlerMethod) handler;
+        if (hm.getMethod().isAnnotationPresent(ExcludeFromQuantumLog.class)) {
+            return;
         }
-        chain.doFilter(request, response);
-    }
-
-    private boolean isMethodExcluded(String requestURI) {
-        try {
-            Method method = findMethodForRequestURI(requestURI);
-            if (method != null) {
-                return method.isAnnotationPresent(ExcludeFromQuantumLog.class);
-            }
-        } catch (Exception e) {
-        }
-        return false;
-    }
-
-    private Method findMethodForRequestURI(String requestURI) {
-        return null;
+        logPrinter.printResponseHeaders(response);
     }
 }

@@ -1,33 +1,22 @@
 package com.quantum.logs.config;
 
-import com.quantum.logs.beans.QuantumLogFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import com.quantum.logs.beans.QuantumLogFilter;
 
 @Configuration
-public class QuantumLogConfig {
+public class QuantumLogConfig implements WebMvcConfigurer {
 
-    @Bean
-    public FilterRegistrationBean<QuantumLogFilter> quantumLogFilter() {
-        FilterRegistrationBean<QuantumLogFilter> registrationBean = new FilterRegistrationBean<>();
+    @Autowired
+    private QuantumLogFilter quantumLogInterceptor;
 
-        // Create filter with the main application class
-        QuantumLogFilter quantumFilter = new QuantumLogFilter(getApplicationClass());
-
-        registrationBean.setFilter(quantumFilter);
-        registrationBean.addUrlPatterns("/*"); // Apply to all URLs
-        registrationBean.setOrder(1); // Set filter order if needed
-
-        return registrationBean;
-    }
-
-    private Class<?> getApplicationClass() {
-        try {
-            // Replace with your main application class path
-            return Class.forName("com.quantum.logs.LogsApplication");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not find main application class", e);
-        }
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(quantumLogInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/error", "/error/**")
+                .order(1);
     }
 }
