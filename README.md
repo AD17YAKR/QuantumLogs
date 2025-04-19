@@ -99,58 +99,6 @@ QuantumLogger will also:
 | **Scheduled Tasks** | Spring `@Scheduled` for daily summaries       |
 | **AI Integration**  | OpenAI/Gemini APIs (via REST or SDK)          |
 
-## 🧱 Project Structure (Simplified)
-
-```plaintext
-quantum-logger/
-├── QuantumLoggerAutoConfiguration.java       # For auto-config if building a starter
-│
-├── annotations/
-│   ├── EnableQuantumLog.java               # Main toggle annotation
-│   └── ExcludeQuantumLog.java                # For endpoint exclusion (optional with filters)
-│
-├── filter/
-│   └── QuantumLoggerFilter.java              # Central request/response filter
-│
-├── wrapper/
-│   ├── CachedBodyHttpServletRequest.java     # Wrapper to read request body multiple times
-│   └── CachedBodyHttpServletResponse.java    # Wrapper to read and capture response body
-│
-├── handler/
-│   └── QuantumLogHandler.java                # Core coordinator: dedup, delegate, manage
-│
-├── deduplicator/
-│   └── LogDeduplicator.java                  # First-hit logic to prevent log flooding
-│
-├── async/
-│   └── AsyncLogExecutor.java                 # Async writer manager using ThreadPool
-│
-├── writer/
-│   ├── MarkdownLogWriter.java                # Writes human-readable markdown
-│   └── FileSystemLogStorage.java             # Handles file I/O and log file structure
-│
-├── ai/
-│   ├── AiLogSummarizer.java                  # GenAI integration for summaries
-│   └── AiErrorAnalyzer.java                  # AI-powered error diagnosis
-│
-├── scheduler/
-│   └── DailyLogSummaryScheduler.java         # Runs daily summary + AI tasks
-│
-├── model/
-│   ├── QuantumLogEntry.java                  # Unified log data model
-│   └── RequestContext.java                   # Per-request structured info
-│
-├── config/
-│   └── QuantumLoggerProperties.java          # External config mapping (application.yml)
-│
-├── util/
-│   └── MarkdownUtils.java                    # Markdown formatting helpers
-│
-└── test/
-    └── QuantumLoggerIntegrationTest.java     # Tests for end-to-end filter logging
-
-```
-
 ## 🧠 Why This Project Is Smart
 
 | **Reason**              | **Impact**                                            |
