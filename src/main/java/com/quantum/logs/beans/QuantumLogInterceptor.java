@@ -17,24 +17,32 @@ import java.util.concurrent.ConcurrentMap;
 
 @Component
 public class QuantumLogInterceptor implements HandlerInterceptor {
+    private final boolean isAnnotationAdded;
+    private final boolean printAll;
     private final boolean enabled;
     private final IQuantumLogPrinter logPrinter;
 
-    // Track the last date a URI was logged
     private final ConcurrentMap<String, LocalDate> lastLogged = new ConcurrentHashMap<>();
 
     public QuantumLogInterceptor(IQuantumLogPrinter logPrinter) {
         this.logPrinter = logPrinter;
-        this.enabled = AnnotationUtils.findAnnotation(
-                LogsApplication.class, EnableQuantumLog.class) != null;
-        System.out.println("QuantumLogInterceptor enabled=" + enabled);
+        EnableQuantumLog annotation = AnnotationUtils.findAnnotation(
+                LogsApplication.class, EnableQuantumLog.class);
+        this.isAnnotationAdded = annotation != null;
+        this.printAll = annotation != null && annotation.printAll();
+        this.enabled = annotation != null && annotation.enabled();
+        System.out.println("QuantumLogInterceptor isAnnotationAdded=" + isAnnotationAdded + ", printAll=" + printAll);
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request,
             HttpServletResponse response,
             Object handler) {
-        if (!enabled || !(handler instanceof HandlerMethod)) {
+        if (!enabled) {
+            return true;
+        }
+
+        if (!isAnnotationAdded || !(handler instanceof HandlerMethod)) {
             return true;
         }
 
@@ -46,19 +54,19 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
         String uri = request.getRequestURI();
         LocalDate today = LocalDate.now();
 
-        // Skip if we've already logged this URI today
-        LocalDate lastDate = lastLogged.get(uri);
-        if (today.equals(lastDate)) {
+        boolean shouldPrint = printAll || !today.equals(lastLogged.get(uri));
+
+        if (shouldPrint) {
+            if (!printAll) {
+                lastLogged.put(uri, today);
+            }
+            logPrinter.printRequestCurl(request);
+            logPrinter.printRequestHeaders(request);
+            request.setAttribute("quantumLogPrinted", true);
+        } else {
             request.setAttribute("quantumLogPrinted", false);
-            return true;
         }
 
-        // First log for today
-        lastLogged.put(uri, today);
-
-        logPrinter.printRequestCurl(request);
-        logPrinter.printRequestHeaders(request);
-        request.setAttribute("quantumLogPrinted", true);
         return true;
     }
 
@@ -67,7 +75,11 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
             HttpServletResponse response,
             Object handler,
             Exception ex) {
-        if (!enabled || !(handler instanceof HandlerMethod)) {
+        if (!enabled) {
+            return;
+        }
+
+        if (!isAnnotationAdded || !(handler instanceof HandlerMethod)) {
             return;
         }
 
