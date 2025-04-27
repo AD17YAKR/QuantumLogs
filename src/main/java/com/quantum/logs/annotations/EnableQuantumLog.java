@@ -38,4 +38,10 @@ public @interface EnableQuantumLog {
      * When Enabled cURL for the endPoints are printed
      */
     boolean enableCurls() default false;
+
+    /**
+     * When Enabled, request and response bodies are logged
+     */
+    boolean logBodies() default true;
+
 }

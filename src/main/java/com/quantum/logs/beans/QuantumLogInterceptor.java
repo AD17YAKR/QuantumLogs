@@ -18,21 +18,21 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
     private final boolean printAll;
     private final boolean enableCurls;
     private final IQuantumLogPrinter logPrinter;
+    private final boolean logBodies;
     private final ConcurrentMap<String, LocalDate> lastLogged = new ConcurrentHashMap<>();
 
     public QuantumLogInterceptor(IQuantumLogPrinter logPrinter,
             boolean enabled,
-            boolean printAll, boolean enableCurls) {
+            boolean printAll, boolean enableCurls, boolean logBodies) {
         this.logPrinter = logPrinter;
         this.enabled = enabled;
         this.printAll = printAll;
         this.enableCurls = enableCurls;
+        this.logBodies = logBodies;
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request,
-            HttpServletResponse response,
-            Object handler) {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (!enabled || !(handler instanceof HandlerMethod)) {
             return true;
         }
@@ -53,6 +53,9 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
                 logPrinter.printRequestCurl(request);
             }
             logPrinter.printRequestHeaders(request);
+            if (logBodies) {
+                logPrinter.printRequestBody(request);
+            }
             request.setAttribute("quantumLogPrinted", true);
         } else {
             request.setAttribute("quantumLogPrinted", false);
@@ -61,9 +64,7 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request,
-            HttpServletResponse response,
-            Object handler,
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
             Exception ex) {
         if (!enabled || !(handler instanceof HandlerMethod)) {
             return;
@@ -72,6 +73,11 @@ public class QuantumLogInterceptor implements HandlerInterceptor {
         Boolean printed = (Boolean) request.getAttribute("quantumLogPrinted");
         if (Boolean.TRUE.equals(printed)) {
             logPrinter.printResponseHeaders(response);
+            
+            byte[] responseBody = (byte[]) request.getAttribute("responseBody");
+            if (responseBody != null) {
+                logPrinter.printResponseBody(responseBody);
+            }
         }
     }
 }

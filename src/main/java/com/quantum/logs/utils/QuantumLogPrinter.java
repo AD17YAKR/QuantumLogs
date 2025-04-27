@@ -2,10 +2,17 @@ package com.quantum.logs.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quantum.logs.beans.CachedBodyHttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class QuantumLogPrinter implements IQuantumLogPrinter {
+
+    private static final Logger logger = LoggerFactory.getLogger(QuantumLogPrinter.class);
 
     @Override
     public void printRequestCurl(HttpServletRequest request) {
@@ -35,24 +42,71 @@ public class QuantumLogPrinter implements IQuantumLogPrinter {
                             .append(value)
                             .append("\"");
                 });
-
-        System.out.println("cURL: " + curl);
+        logger.debug("cURL: " + curl);
     }
 
     @Override
     public void printRequestHeaders(HttpServletRequest request) {
-        System.out.println("Request Headers:");
+        logger.debug("Request Headers:");
         request.getHeaderNames().asIterator()
                 .forEachRemaining(name -> {
-                    System.out.println("\t" + name + ": " + request.getHeader(name));
+                    logger.debug("\t" + name + ": " + request.getHeader(name));
                 });
     }
 
     @Override
     public void printResponseHeaders(HttpServletResponse response) {
-        System.out.println("Response Headers:");
+        logger.debug("Response Headers:");
         for (String name : response.getHeaderNames()) {
-            System.out.println("\t" + name + ": " + response.getHeader(name));
+            logger.debug("\t" + name + ": " + response.getHeader(name));
         }
+    }
+
+    @Override
+    public void printRequestBody(HttpServletRequest request) {
+        try {
+            CachedBodyHttpServletRequest cachedRequest = (CachedBodyHttpServletRequest) request
+                    .getAttribute("cachedRequest");
+            if (cachedRequest != null) {
+                byte[] body = cachedRequest.getCachedBody();
+                if (body != null && body.length > 0) {
+                    String contentType = request.getContentType();
+                    logger.debug("Request Body (" + contentType + "):");
+                    logger.debug(formatBody(body, contentType));
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Error printing request body: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void printResponseBody(byte[] responseBody) {
+        try {
+            if (responseBody != null && responseBody.length > 0) {
+                String contentType = "application/json"; // Default or get from response
+                logger.debug("Response Body (" + contentType + "):");
+                logger.debug(formatBody(responseBody, contentType));
+            }
+        } catch (Exception e) {
+            logger.debug("Error printing response body: " + e.getMessage());
+        }
+    }
+
+    private String formatBody(byte[] body, String contentType) {
+        String content = new String(body, StandardCharsets.UTF_8);
+
+        if (contentType != null) {
+            if (contentType.contains("application/json")) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Object json = mapper.readValue(content, Object.class);
+                    return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        return content;
     }
 }

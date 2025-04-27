@@ -8,5 +8,9 @@ public interface IQuantumLogPrinter {
 
     void printRequestHeaders(HttpServletRequest request);
 
+    void printRequestBody(HttpServletRequest request);
+
     void printResponseHeaders(HttpServletResponse response);
+
+    void printResponseBody(byte[] responseBody);
 }
