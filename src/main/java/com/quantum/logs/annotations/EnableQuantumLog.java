@@ -42,6 +42,6 @@ public @interface EnableQuantumLog {
     /**
      * When Enabled, request and response bodies are logged
      */
-    boolean logBodies() default true;
+    boolean enableBodies() default true;
 
 }

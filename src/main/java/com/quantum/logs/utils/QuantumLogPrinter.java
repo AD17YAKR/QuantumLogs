@@ -6,13 +6,9 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quantum.logs.beans.CachedBodyHttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Component
 public class QuantumLogPrinter implements IQuantumLogPrinter {
-
-    private static final Logger logger = LoggerFactory.getLogger(QuantumLogPrinter.class);
 
     @Override
     public void printRequestCurl(HttpServletRequest request) {
@@ -42,23 +38,23 @@ public class QuantumLogPrinter implements IQuantumLogPrinter {
                             .append(value)
                             .append("\"");
                 });
-        logger.debug("cURL: " + curl);
+        System.out.println("cURL: " + curl);
     }
 
     @Override
     public void printRequestHeaders(HttpServletRequest request) {
-        logger.debug("Request Headers:");
+        System.out.println("Request Headers:");
         request.getHeaderNames().asIterator()
                 .forEachRemaining(name -> {
-                    logger.debug("\t" + name + ": " + request.getHeader(name));
+                    System.out.println("\t" + name + ": " + request.getHeader(name));
                 });
     }
 
     @Override
     public void printResponseHeaders(HttpServletResponse response) {
-        logger.debug("Response Headers:");
+        System.out.println("Response Headers:");
         for (String name : response.getHeaderNames()) {
-            logger.debug("\t" + name + ": " + response.getHeader(name));
+            System.out.println("\t" + name + ": " + response.getHeader(name));
         }
     }
 
@@ -71,12 +67,12 @@ public class QuantumLogPrinter implements IQuantumLogPrinter {
                 byte[] body = cachedRequest.getCachedBody();
                 if (body != null && body.length > 0) {
                     String contentType = request.getContentType();
-                    logger.debug("Request Body (" + contentType + "):");
-                    logger.debug(formatBody(body, contentType));
+                    System.out.println("Request Body (" + contentType + "):");
+                    System.out.println(formatBody(body, contentType));
                 }
             }
         } catch (Exception e) {
-            logger.debug("Error printing request body: " + e.getMessage());
+            System.out.println("Error printing request body: " + e.getMessage());
         }
     }
 
@@ -85,11 +81,11 @@ public class QuantumLogPrinter implements IQuantumLogPrinter {
         try {
             if (responseBody != null && responseBody.length > 0) {
                 String contentType = "application/json"; // Default or get from response
-                logger.debug("Response Body (" + contentType + "):");
-                logger.debug(formatBody(responseBody, contentType));
+                System.out.println("Response Body (" + contentType + "):");
+                System.out.println(formatBody(responseBody, contentType));
             }
         } catch (Exception e) {
-            logger.debug("Error printing response body: " + e.getMessage());
+            System.out.println("Error printing response body: " + e.getMessage());
         }
     }
 

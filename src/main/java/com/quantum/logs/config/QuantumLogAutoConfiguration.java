@@ -20,7 +20,7 @@ public class QuantumLogAutoConfiguration implements ImportAware, WebMvcConfigure
     private boolean enabled = true;
     private boolean printAll = false;
     private boolean enableCurls = false;
-    private boolean logBodies = true; // New field for body logging
+    private boolean enableBodies = true;
     private final IQuantumLogPrinter logPrinter;
 
     public QuantumLogAutoConfiguration(IQuantumLogPrinter logPrinter) {
@@ -35,13 +35,13 @@ public class QuantumLogAutoConfiguration implements ImportAware, WebMvcConfigure
             this.enabled = (Boolean) attrs.get("enabled");
             this.printAll = (Boolean) attrs.get("printAll");
             this.enableCurls = (Boolean) attrs.get("enableCurls");
-            this.logBodies = (Boolean) attrs.get("logBodies"); // Get the new option
+            this.enableBodies = (Boolean) attrs.get("enableBodies"); // Get the new option
         }
     }
 
     @Bean
     public QuantumLogInterceptor quantumLogInterceptor() {
-        return new QuantumLogInterceptor(logPrinter, enabled, printAll, enableCurls, logBodies);
+        return new QuantumLogInterceptor(logPrinter, enabled, printAll, enableCurls, enableBodies);
     }
 
     @Bean
@@ -51,7 +51,7 @@ public class QuantumLogAutoConfiguration implements ImportAware, WebMvcConfigure
         registration.addUrlPatterns("/*");
         registration.setName("quantumLogFilter");
         registration.setOrder(1); // Make sure this runs before the interceptor
-        registration.setEnabled(enabled && logBodies); // Only enable if both logging and body logging are enabled
+        registration.setEnabled(enabled && enableBodies); // Only enable if both logging and body logging are enabled
         return registration;
     }
 
@@ -60,6 +60,6 @@ public class QuantumLogAutoConfiguration implements ImportAware, WebMvcConfigure
         registry.addInterceptor(quantumLogInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns("/error", "/error/**")
-                .order(2); // Run after the filter
+                .order(2);
     }
 }

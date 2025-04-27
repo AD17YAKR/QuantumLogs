@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.quantum.logs.annotations.EnableQuantumLog;
 
 @SpringBootApplication
-@EnableQuantumLog(enabled = true, printAll = true)
+@EnableQuantumLog(enabled = true, printAll = true, enableBodies = true)
 public class LogsApplication {
 
 	public static void main(String[] args) {
